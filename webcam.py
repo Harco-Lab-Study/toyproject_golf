@@ -1,7 +1,8 @@
 import cv2
 cv2.namedWindow('Webcam Stream', cv2.WINDOW_NORMAL)
-from ultralytics import YOLO
 import numpy as np
+from ultralytics import YOLO
+
 from util import get_most_min_distance, draw_skeleton
 import json
 import os
@@ -15,12 +16,12 @@ PAIRS = [
     (6, 10), (10, 8), (8, 6)  # right arm
 ]
 
-save_path = "dataset"
-# LABEL_IDX = 0 # 0: not address
-# json_path = "dataset/not_address.json" ## json 파일 경로 : 필요에 따라 수정
-LABEL_IDX = 1 # 1: address
-json_path = "dataset/address.json" ## json 파일 경로 : 필요에 따라 수정
+save_path = "/home/harcolab/git/toyproject_golf/dataset/"
 
+LABEL_IDX = 0 # 0: not address
+json_path = "/home/harcolab/git/toyproject_golf/dataset/not_address.json" ## json 파일 경로 : 필요에 따라 수정
+# LABEL_IDX = 1 # 1: address
+# json_path = "/home/harcolab/git/toyproject_golf/dataset/address.json" ## json 파일 경로 : 필요에 따라 수정
 
 
 
@@ -50,7 +51,7 @@ else:
 
 
 # webcam
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 
 
 # https://github.com/ultralytics/ultralytics 참고
@@ -72,16 +73,22 @@ while True:
 
     # one person인경우
     if np.array(keypoints_xy_list).shape == (17,2):
-        keypoints_xy = np.array(keypoints_xy_list)
         min_idx = get_most_min_distance(boxes_centers, prev_frame_center)
+        keypoints_xy = np.array(keypoints_xy_list)
     
     # multiple person인 경우
     else:
         min_idx = get_most_min_distance(boxes_centers, prev_frame_center)
-        keypoints_xy = np.array(keypoints_xy_list)[min_idx]
+        
 
-    # draw skeleton
-    draw_skeleton(frame, keypoints_xy, PAIRS)
+    # min_idx -1은 사람이 없는 경우, 0은 사람이 1명인 경우
+    if min_idx == 0:
+        draw_skeleton(frame, keypoints_xy, PAIRS)
+        
+    elif min_idx > 0:
+        keypoints_xy = np.array(keypoints_xy_list)[min_idx]
+        draw_skeleton(frame, keypoints_xy, PAIRS)
+        
 
     # Display the frame
     cv2.imshow('Webcam Stream', frame)
@@ -93,6 +100,8 @@ while True:
         break
 
     elif key==13: # enter
+        filename = os.path.join(save_path, f"{index}.jpg")
+        cv2.imwrite(filename, frame)
         # save
         if len(keypoints_xy) == 17:
             data.append({
@@ -107,7 +116,8 @@ while True:
 
 
     count+=1
-    prev_frame_center = boxes_centers[min_idx]
+    if min_idx != -1:
+        prev_frame_center = boxes_centers[min_idx]
 
 # Release the webcam and close all windows
 cap.release()

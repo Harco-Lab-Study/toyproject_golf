@@ -10,6 +10,7 @@ def get_most_min_distance(box_center, frame_center):
 
 
 def draw_skeleton(cv2_frame, keypoints, pairs):
+    print(keypoints)
     for pair in pairs:
         start_point = tuple(keypoints[pair[0]].astype(int))
         end_point = tuple(keypoints[pair[1]].astype(int))
